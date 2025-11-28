@@ -1,0 +1,466 @@
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.awt.event.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+public class SchoolClinicSystem extends JFrame {
+
+    private JTextField nameField, gradeField, tempField, ageField, contactField;
+    private JTextArea symptomsArea, medicationArea;
+    private DefaultTableModel tableModel;
+    private JTable patientTable;
+    private JComboBox<String> genderCombo, severityCombo;
+    private JLabel statusLabel;
+    private int totalPatients = 0;
+
+    public SchoolClinicSystem() {
+        setTitle("School Clinic Management System");
+        setSize(1000, 650);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout(10, 10));
+
+        initializeComponents();
+        setupUI();
+    }
+
+    private void initializeComponents() {
+        nameField = new JTextField(15);
+        gradeField = new JTextField(10);
+        ageField = new JTextField(5);
+        tempField = new JTextField(5);
+        contactField = new JTextField(15);
+        
+        symptomsArea = new JTextArea(3, 20);
+        medicationArea = new JTextArea(3, 20);
+        
+        String[] genders = {"Select Gender", "Male", "Female"};
+        genderCombo = new JComboBox<String>(genders);
+        
+        String[] severityLevels = {"Low", "Medium", "High", "Emergency"};
+        severityCombo = new JComboBox<String>(severityLevels);
+        
+        statusLabel = new JLabel("Ready to add patient records");
+    }
+
+    private void setupUI() {
+        JPanel titlePanel = new JPanel(new BorderLayout());
+        titlePanel.setBackground(new Color(41, 128, 185));
+        titlePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        JLabel title = new JLabel("School Clinic Management System", SwingConstants.CENTER);
+        title.setFont(new Font("Arial", Font.BOLD, 28));
+        title.setForeground(Color.WHITE);
+        titlePanel.add(title, BorderLayout.CENTER);
+        
+        statusLabel.setForeground(Color.YELLOW);
+        statusLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        titlePanel.add(statusLabel, BorderLayout.SOUTH);
+
+        add(titlePanel, BorderLayout.NORTH);
+
+        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        mainPanel.add(createFormPanel(), BorderLayout.WEST);
+        mainPanel.add(createTablePanel(), BorderLayout.CENTER);
+
+        add(mainPanel, BorderLayout.CENTER);
+        add(createBottomPanel(), BorderLayout.SOUTH);
+    }
+
+    private JPanel createFormPanel() {
+        JPanel formPanel = new JPanel();
+        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
+        formPanel.setBorder(BorderFactory.createTitledBorder("Patient Information"));
+        formPanel.setPreferredSize(new Dimension(350, 0));
+        formPanel.setBackground(Color.WHITE);
+
+        JPanel personalPanel = createLabeledPanel("Personal Information");
+        personalPanel.add(createFormRow("Full Name:", nameField));
+        personalPanel.add(createFormRow("Grade Level:", gradeField));
+        personalPanel.add(createFormRow("Age:", ageField));
+        
+        JPanel genderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        genderPanel.add(new JLabel("Gender:"));
+        genderPanel.add(genderCombo);
+        personalPanel.add(genderPanel);
+        
+        personalPanel.add(createFormRow("Contact No:", contactField));
+
+        JPanel medicalPanel = createLabeledPanel("Medical Information");
+        medicalPanel.add(createFormRow("Temperature (°C):", tempField));
+        
+        JPanel severityPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        severityPanel.add(new JLabel("Severity:"));
+        severityPanel.add(severityCombo);
+        medicalPanel.add(severityPanel);
+        
+        medicalPanel.add(new JLabel("Symptoms:"));
+        JScrollPane symptomsScroll = new JScrollPane(symptomsArea);
+        symptomsScroll.setPreferredSize(new Dimension(300, 80));
+        medicalPanel.add(symptomsScroll);
+        
+        medicalPanel.add(new JLabel("Medication Given:"));
+        JScrollPane medicationScroll = new JScrollPane(medicationArea);
+        medicationScroll.setPreferredSize(new Dimension(300, 80));
+        medicalPanel.add(medicationScroll);
+
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 3, 5, 5));
+        buttonPanel.setBackground(Color.WHITE);
+        
+        JButton addBtn = createStyledButton("Add Record", new Color(46, 204, 113));
+        JButton clearBtn = createStyledButton("Clear Form", new Color(52, 152, 219));
+        JButton searchBtn = createStyledButton("Search", new Color(155, 89, 182));
+        
+        addBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                addPatientRecord();
+            }
+        });
+        
+        clearBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                clearForm();
+            }
+        });
+        
+        searchBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                searchPatient();
+            }
+        });
+
+        buttonPanel.add(addBtn);
+        buttonPanel.add(clearBtn);
+        buttonPanel.add(searchBtn);
+
+        formPanel.add(personalPanel);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        formPanel.add(medicalPanel);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        formPanel.add(buttonPanel);
+
+        return formPanel;
+    }
+
+    private JPanel createLabeledPanel(String title) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createTitledBorder(title));
+        panel.setBackground(new Color(240, 240, 240));
+        return panel;
+    }
+
+    private JPanel createFormRow(String label, JComponent field) {
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        row.setBackground(new Color(240, 240, 240));
+        row.add(new JLabel(label));
+        field.setPreferredSize(new Dimension(200, 25));
+        row.add(field);
+        return row;
+    }
+
+    private JButton createStyledButton(String text, Color color) {
+        JButton button = new JButton(text);
+        button.setBackground(color);
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setFont(new Font("Arial", Font.BOLD, 12));
+        return button;
+    }
+
+    private JPanel createTablePanel() {
+        JPanel tablePanel = new JPanel(new BorderLayout());
+        tablePanel.setBorder(BorderFactory.createTitledBorder("Patient Records"));
+        
+        String[] columns = {"No.", "Name", "Grade", "Age", "Gender", "Temp", "Severity", "Symptoms", "Medication", "Date"};
+        tableModel = new DefaultTableModel(columns, 0) {
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        
+        patientTable = new JTable(tableModel);
+        patientTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        patientTable.getTableHeader().setReorderingAllowed(false);
+        
+        patientTable.getColumnModel().getColumn(0).setPreferredWidth(40);
+        patientTable.getColumnModel().getColumn(1).setPreferredWidth(100);
+        patientTable.getColumnModel().getColumn(2).setPreferredWidth(60);
+        patientTable.getColumnModel().getColumn(3).setPreferredWidth(40);
+        patientTable.getColumnModel().getColumn(4).setPreferredWidth(60);
+        patientTable.getColumnModel().getColumn(5).setPreferredWidth(60);
+        patientTable.getColumnModel().getColumn(6).setPreferredWidth(80);
+        patientTable.getColumnModel().getColumn(7).setPreferredWidth(150);
+        patientTable.getColumnModel().getColumn(8).setPreferredWidth(150);
+        patientTable.getColumnModel().getColumn(9).setPreferredWidth(100);
+        
+        JScrollPane tableScroll = new JScrollPane(patientTable);
+        tablePanel.add(tableScroll, BorderLayout.CENTER);
+        
+        return tablePanel;
+    }
+
+    private JPanel createBottomPanel() {
+        JPanel bottomPanel = new JPanel(new FlowLayout());
+        bottomPanel.setBackground(new Color(236, 240, 241));
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        
+        JButton deleteBtn = createStyledButton("Delete Selected", new Color(231, 76, 60));
+        JButton exportBtn = createStyledButton("Export Data", new Color(241, 196, 15));
+        JButton statsBtn = createStyledButton("Show Statistics", new Color(52, 73, 94));
+        JButton printBtn = createStyledButton("Print Record", new Color(142, 68, 173));
+        
+        deleteBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                deleteSelectedRecord();
+            }
+        });
+        
+        exportBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                exportData();
+            }
+        });
+        
+        statsBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                showStatistics();
+            }
+        });
+        
+        printBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                printSelectedRecord();
+            }
+        });
+        
+        bottomPanel.add(deleteBtn);
+        bottomPanel.add(exportBtn);
+        bottomPanel.add(statsBtn);
+        bottomPanel.add(printBtn);
+        
+        return bottomPanel;
+    }
+
+    private void addPatientRecord() {
+        if (validateInput()) {
+            totalPatients++;
+            String timestamp = new SimpleDateFormat("MM/dd/yyyy HH:mm").format(new Date());
+            
+            tableModel.addRow(new Object[]{
+                String.valueOf(totalPatients),
+                nameField.getText().trim(),
+                gradeField.getText().trim(),
+                ageField.getText().trim(),
+                genderCombo.getSelectedItem(),
+                tempField.getText().trim() + "°C",
+                severityCombo.getSelectedItem(),
+                symptomsArea.getText().trim(),
+                medicationArea.getText().trim(),
+                timestamp
+            });
+            
+            statusLabel.setText("Patient record added successfully! Total records: " + totalPatients);
+            clearForm();
+        }
+    }
+
+    private void clearForm() {
+        nameField.setText("");
+        gradeField.setText("");
+        ageField.setText("");
+        tempField.setText("");
+        contactField.setText("");
+        symptomsArea.setText("");
+        medicationArea.setText("");
+        genderCombo.setSelectedIndex(0);
+        severityCombo.setSelectedIndex(0);
+        nameField.requestFocus();
+        statusLabel.setText("Form cleared. Ready to add new patient record.");
+    }
+
+    private void searchPatient() {
+        String searchTerm = JOptionPane.showInputDialog(this, "Enter student name to search:");
+            
+        if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+            searchTerm = searchTerm.trim().toLowerCase();
+            boolean found = false;
+            
+            for (int i = 0; i < tableModel.getRowCount(); i++) {
+                String studentName = tableModel.getValueAt(i, 1).toString().toLowerCase();
+                if (studentName.contains(searchTerm)) {
+                    patientTable.setRowSelectionInterval(i, i);
+                    patientTable.scrollRectToVisible(patientTable.getCellRect(i, 0, true));
+                    found = true;
+                    statusLabel.setText("Found student: " + tableModel.getValueAt(i, 1));
+                    break;
+                }
+            }
+            
+            if (!found) {
+                JOptionPane.showMessageDialog(this, "No student found with name: " + searchTerm);
+            }
+        }
+    }
+
+    private void deleteSelectedRecord() {
+        int selectedRow = patientTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a record to delete.");
+            return;
+        }
+        
+        String studentName = tableModel.getValueAt(selectedRow, 1).toString();
+        int confirm = JOptionPane.showConfirmDialog(this, 
+            "Are you sure you want to delete record for: " + studentName + "?", 
+            "Confirm Delete", JOptionPane.YES_NO_OPTION);
+            
+        if (confirm == JOptionPane.YES_OPTION) {
+            tableModel.removeRow(selectedRow);
+            totalPatients--;
+            statusLabel.setText("Record deleted successfully. Total records: " + totalPatients);
+            
+            for (int i = 0; i < tableModel.getRowCount(); i++) {
+                tableModel.setValueAt(String.valueOf(i + 1), i, 0);
+            }
+        }
+    }
+
+    private void exportData() {
+        if (tableModel.getRowCount() == 0) {
+            JOptionPane.showMessageDialog(this, "No records to export.");
+            return;
+        }
+        
+        JOptionPane.showMessageDialog(this, 
+            "Data export functionality would be implemented here.\n" +
+            "Total records available for export: " + tableModel.getRowCount(),
+            "Export Data", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void showStatistics() {
+        if (tableModel.getRowCount() == 0) {
+            JOptionPane.showMessageDialog(this, "No records available for statistics.");
+            return;
+        }
+        
+        int highSeverity = 0;
+        int mediumSeverity = 0;
+        int lowSeverity = 0;
+        int emergencySeverity = 0;
+        
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            String severity = tableModel.getValueAt(i, 6).toString();
+            if (severity.equals("High")) {
+                highSeverity++;
+            } else if (severity.equals("Medium")) {
+                mediumSeverity++;
+            } else if (severity.equals("Low")) {
+                lowSeverity++;
+            } else if (severity.equals("Emergency")) {
+                emergencySeverity++;
+            }
+        }
+        
+        String stats = "Clinic Statistics:\n\n" +
+            "Total Patients: " + tableModel.getRowCount() + "\n" +
+            "Emergency Cases: " + emergencySeverity + "\n" +
+            "High Severity: " + highSeverity + "\n" +
+            "Medium Severity: " + mediumSeverity + "\n" +
+            "Low Severity: " + lowSeverity + "\n\n" +
+            "Last Updated: " + new SimpleDateFormat("MMMM dd, yyyy HH:mm").format(new Date());
+        
+        JOptionPane.showMessageDialog(this, stats, "Clinic Statistics", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void printSelectedRecord() {
+        int selectedRow = patientTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a record to print.");
+            return;
+        }
+        
+        String record = "SCHOOL CLINIC RECORD\n\n" +
+            "Patient No.: " + tableModel.getValueAt(selectedRow, 0) + "\n" +
+            "Name: " + tableModel.getValueAt(selectedRow, 1) + "\n" +
+            "Grade: " + tableModel.getValueAt(selectedRow, 2) + " | Age: " + tableModel.getValueAt(selectedRow, 3) + " | Gender: " + tableModel.getValueAt(selectedRow, 4) + "\n" +
+            "Temperature: " + tableModel.getValueAt(selectedRow, 5) + " | Severity: " + tableModel.getValueAt(selectedRow, 6) + "\n\n" +
+            "Symptoms:\n" + tableModel.getValueAt(selectedRow, 7) + "\n\n" +
+            "Medication:\n" + tableModel.getValueAt(selectedRow, 8) + "\n\n" +
+            "Date: " + tableModel.getValueAt(selectedRow, 9);
+        
+        JTextArea textArea = new JTextArea(record);
+        textArea.setEditable(false);
+        textArea.setFont(new Font("Arial", Font.PLAIN, 12));
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        scrollPane.setPreferredSize(new Dimension(400, 300));
+        
+        JOptionPane.showMessageDialog(this, scrollPane, "Patient Record", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private boolean validateInput() {
+        if (nameField.getText().trim().isEmpty()) {
+            showErrorMessage("Please enter student name.");
+            return false;
+        }
+        if (gradeField.getText().trim().isEmpty()) {
+            showErrorMessage("Please enter grade level.");
+            return false;
+        }
+        if (ageField.getText().trim().isEmpty()) {
+            showErrorMessage("Please enter age.");
+            return false;
+        }
+        if (tempField.getText().trim().isEmpty()) {
+            showErrorMessage("Please enter temperature.");
+            return false;
+        }
+        if (symptomsArea.getText().trim().isEmpty()) {
+            showErrorMessage("Please describe symptoms.");
+            return false;
+        }
+        
+        try {
+            double temp = Double.parseDouble(tempField.getText().trim());
+            if (temp < 30 || temp > 45) {
+                showErrorMessage("Please enter a valid temperature (30-45°C).");
+                return false;
+            }
+        } catch (NumberFormatException e) {
+            showErrorMessage("Please enter a valid number for temperature.");
+            return false;
+        }
+        
+        try {
+            int age = Integer.parseInt(ageField.getText().trim());
+            if (age < 3 || age > 25) {
+                showErrorMessage("Please enter a valid age (3-25 years).");
+                return false;
+            }
+        } catch (NumberFormatException e) {
+            showErrorMessage("Please enter a valid number for age.");
+            return false;
+        }
+        
+        if (genderCombo.getSelectedIndex() == 0) {
+            showErrorMessage("Please select gender.");
+            return false;
+        }
+        
+        return true;
+    }
+
+    private void showErrorMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "Input Error", JOptionPane.ERROR_MESSAGE);
+        statusLabel.setText("Error: " + message);
+    }
+
+    public static void main(String[] args) {
+        SchoolClinicSystem clinicSystem = new SchoolClinicSystem();
+        clinicSystem.setVisible(true);
+    }
+}
